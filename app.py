@@ -7,8 +7,8 @@ app = Flask(__name__)
 # In-memory "database"
 # -----------------------
 students = [
-    {"id": 1, "name": "John Doe", "grade": 10, "section": "Zechariah"},
-    {"id": 2, "name": "Jane Smith", "grade": 11, "section": "Ezekiel"}
+    {"id": 1, "name": "John Doe", "year": "1st Year", "section": "Zechariah"},
+    {"id": 2, "name": "Jane Smith", "year": "2nd Year", "section": "Ezekiel"}
 ]
 
 
@@ -45,7 +45,7 @@ def home():
             main {{
                 max-width: 800px;
                 margin: 30px auto;
-                background: rgba(255, 255, 255, 0.9);
+                background: rgba(255, 255, 255, 0.95);
                 padding: 30px;
                 border-radius: 12px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -59,7 +59,7 @@ def home():
                 margin-bottom: 30px;
             }}
 
-            input[type="text"], input[type="number"] {{
+            input[type="text"] {{
                 padding: 10px;
                 width: 90%;
                 margin-bottom: 10px;
@@ -118,7 +118,7 @@ def home():
             <h2>Add a New Student</h2>
             <form action="/add" method="POST">
                 <input type="text" name="name" placeholder="Full Name" required><br>
-                <input type="number" name="grade" placeholder="Grade" required><br>
+                <input type="text" name="year" placeholder="Year (e.g., 1st Year)" required><br>
                 <input type="text" name="section" placeholder="Section" required><br>
                 <button type="submit">Add Student</button>
             </form>
@@ -128,7 +128,7 @@ def home():
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>Grade</th>
+                    <th>Year</th>
                     <th>Section</th>
                     <th>Added</th>
                 </tr>
@@ -139,7 +139,7 @@ def home():
                 <tr>
                     <td>{s['id']}</td>
                     <td>{s['name']}</td>
-                    <td>{s['grade']}</td>
+                    <td>{s['year']}</td>
                     <td>{s['section']}</td>
                     <td>{s.get('created_at', '—')}</td>
                 </tr>
@@ -164,16 +164,16 @@ def home():
 @app.route('/add', methods=['POST'])
 def add_student():
     name = request.form.get('name')
-    grade = request.form.get('grade')
+    year = request.form.get('year')
     section = request.form.get('section')
 
-    if not name or not grade or not section:
+    if not name or not year or not section:
         return "Invalid input. Please fill all fields.", 400
 
     new_student = {
         "id": len(students) + 1,
         "name": name,
-        "grade": int(grade),
+        "year": year,
         "section": section,
         "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     }
@@ -190,7 +190,7 @@ def get_students():
 
 
 # -----------------------
-# MAIN
+# MAIN ENTRY POINT
 # -----------------------
 if __name__ == '__main__':
     app.run(debug=True)
