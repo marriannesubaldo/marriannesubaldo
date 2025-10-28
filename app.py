@@ -1,50 +1,74 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template, redirect, url_for
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Home route
+# -----------------------
+# In-Memory Data Storage
+# -----------------------
+students = [
+    {"id": 1, "name": "John Doe", "grade": 10, "section": "Zechariah"},
+    {"id": 2, "name": "Jane Smith", "grade": 11, "section": "Ezekiel"}
+]
+
+# -----------------------
+# Web Design Route
+# -----------------------
 @app.route('/')
 def home():
+    """Render a simple HTML homepage with styling."""
+    return render_template('index.html', title="My Flask API")
+
+
+# -----------------------
+# API ROUTES
+# -----------------------
+
+@app.route('/api/students', methods=['GET'])
+def get_students():
+    """Return all students."""
     return jsonify({
-        "message": "Welcome to my Flask API!",
-        "status": "success"
+        "status": "success",
+        "count": len(students),
+        "students": students
     }), 200
 
 
-# GET: Retrieve student data
-@app.route('/student', methods=['GET'])
-def get_student():
-    student = {
-        "name": "Your Name",
-        "grade": 10,
-        "section": "Zechariah"
-    }
-    return jsonify(student), 200
+@app.route('/api/students/<int:student_id>', methods=['GET'])
+def get_student(student_id):
+    """Get a single student by ID."""
+    student = next((s for s in students if s['id'] == student_id), None)
+    if student:
+        return jsonify(student), 200
+    return jsonify({"error": "Student not found"}), 404
 
 
-# POST: Add new student data (example)
-@app.route('/student', methods=['POST'])
+@app.route('/api/students', methods=['POST'])
 def add_student():
+    """Add a new student."""
     data = request.get_json()
-    
-    # Basic validation
     if not data or 'name' not in data or 'grade' not in data or 'section' not in data:
-        return jsonify({
-            "error": "Invalid input. Please provide name, grade, and section."
-        }), 400
+        return jsonify({"error": "Invalid input. Provide name, grade, and section."}), 400
+
+    new_student = {
+        "id": len(students) + 1,
+        "name": data['name'],
+        "grade": data['grade'],
+        "section": data['section'],
+        "created_at": datetime.utcnow().isoformat()
+    }
+    students.append(new_student)
 
     return jsonify({
         "message": "Student added successfully!",
-        "student": data
+        "student": new_student
     }), 201
 
 
-# Handle 404 errors gracefully
 @app.errorhandler(404)
 def not_found(error):
-    return jsonify({
-        "error": "Resource not found"
-    }), 404
+    """Custom 404 handler."""
+    return jsonify({"error": "Resource not found"}), 404
 
 
 if __name__ == '__main__':
