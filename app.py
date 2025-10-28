@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request, redirect, jsonify
 from datetime import datetime
 
 app = Flask(__name__)
@@ -11,95 +11,142 @@ students = [
     {"id": 2, "name": "Jane Smith", "grade": 11, "section": "Ezekiel"}
 ]
 
+
 # -----------------------
-# HOME PAGE (with HTML design)
+# HOME PAGE (View + Add)
 # -----------------------
 @app.route('/')
 def home():
-    html_content = """
+    html = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>My Flask Student API</title>
+        <title>Student Management</title>
         <style>
-            body {
+            body {{
                 font-family: 'Segoe UI', sans-serif;
                 background: linear-gradient(to right, #74ebd5, #ACB6E5);
-                color: #333;
-                text-align: center;
                 margin: 0;
                 padding: 0;
-            }
+                color: #333;
+            }}
 
-            header {
-                background-color: rgba(0, 0, 0, 0.2);
-                padding: 1.5rem;
+            header {{
+                background-color: #4a90e2;
                 color: white;
-                font-size: 1.5rem;
+                padding: 1.5rem;
+                text-align: center;
+                font-size: 1.8rem;
                 font-weight: bold;
-            }
+                letter-spacing: 1px;
+            }}
 
-            main {
-                margin-top: 60px;
-            }
+            main {{
+                max-width: 800px;
+                margin: 30px auto;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }}
 
-            .button {
+            h2 {{
+                color: #2c3e50;
+            }}
+
+            form {{
+                margin-bottom: 30px;
+            }}
+
+            input[type="text"], input[type="number"] {{
+                padding: 10px;
+                width: 90%;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+            }}
+
+            button {{
                 background-color: #4CAF50;
                 color: white;
-                padding: 12px 24px;
-                text-decoration: none;
+                padding: 10px 20px;
+                border: none;
                 border-radius: 6px;
+                cursor: pointer;
                 font-weight: bold;
                 transition: 0.3s;
-            }
+            }}
 
-            .button:hover {
+            button:hover {{
                 background-color: #45a049;
-            }
+            }}
 
-            footer {
-                margin-top: 50px;
-                padding: 1rem;
-                font-size: 0.9rem;
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }}
+
+            th, td {{
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: center;
+            }}
+
+            th {{
+                background-color: #4a90e2;
+                color: white;
+            }}
+
+            tr:nth-child(even) {{
+                background-color: #f2f2f2;
+            }}
+
+            footer {{
+                text-align: center;
+                padding: 15px;
                 color: #555;
-            }
-
-            .api-info {
-                background: rgba(255, 255, 255, 0.7);
-                padding: 20px;
-                margin: 20px auto;
-                width: 50%;
-                border-radius: 10px;
-            }
-
-            ul {
-                list-style-type: none;
-                padding: 0;
-            }
-
-            li {
-                margin: 8px 0;
-            }
+                margin-top: 40px;
+            }}
         </style>
     </head>
     <body>
-        <header>🌐 Welcome to My Flask Student API</header>
+        <header>🎓 Student Management System</header>
 
         <main>
-            <div class="api-info">
-                <h2>📘 Flask + JSON API Demo</h2>
-                <p>This API manages student information dynamically.</p>
+            <h2>Add a New Student</h2>
+            <form action="/add" method="POST">
+                <input type="text" name="name" placeholder="Full Name" required><br>
+                <input type="number" name="grade" placeholder="Grade" required><br>
+                <input type="text" name="section" placeholder="Section" required><br>
+                <button type="submit">Add Student</button>
+            </form>
 
-                <h3>Available Endpoints:</h3>
-                <ul>
-                    <li>GET → <code>/api/students</code> – List all students</li>
-                    <li>GET → <code>/api/students/&lt;id&gt;</code> – Get one student</li>
-                    <li>POST → <code>/api/students</code> – Add new student (JSON body)</li>
-                </ul>
+            <h2>All Students</h2>
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Grade</th>
+                    <th>Section</th>
+                    <th>Added</th>
+                </tr>
+    """
 
-                <a href="/api/students" class="button">View All Students (JSON)</a>
-            </div>
+    for s in students:
+        html += f"""
+                <tr>
+                    <td>{s['id']}</td>
+                    <td>{s['name']}</td>
+                    <td>{s['grade']}</td>
+                    <td>{s['section']}</td>
+                    <td>{s.get('created_at', '—')}</td>
+                </tr>
+        """
+
+    html += """
+            </table>
         </main>
 
         <footer>
@@ -108,74 +155,42 @@ def home():
     </body>
     </html>
     """
-    return html_content
+    return html
 
 
 # -----------------------
-# API ROUTES
+# ADD STUDENT ROUTE
 # -----------------------
-
-@app.route('/api/students', methods=['GET'])
-def get_students():
-    """Return all students."""
-    return jsonify({
-        "status": "success",
-        "count": len(students),
-        "students": students
-    }), 200
-
-
-@app.route('/api/students/<int:student_id>', methods=['GET'])
-def get_student(student_id):
-    """Return a single student by ID."""
-    student = next((s for s in students if s['id'] == student_id), None)
-    if student:
-        return jsonify(student), 200
-    return jsonify({"error": "Student not found"}), 404
-
-
-@app.route('/api/students', methods=['POST'])
+@app.route('/add', methods=['POST'])
 def add_student():
-    """Add a new student record."""
-    data = request.get_json()
-    
-    # Basic validation
-    if not data or 'name' not in data or 'grade' not in data or 'section' not in data:
-        return jsonify({"error": "Invalid input. Please provide name, grade, and section."}), 400
+    name = request.form.get('name')
+    grade = request.form.get('grade')
+    section = request.form.get('section')
+
+    if not name or not grade or not section:
+        return "Invalid input. Please fill all fields.", 400
 
     new_student = {
         "id": len(students) + 1,
-        "name": data['name'],
-        "grade": data['grade'],
-        "section": data['section'],
-        "created_at": datetime.utcnow().isoformat()
+        "name": name,
+        "grade": int(grade),
+        "section": section,
+        "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     }
     students.append(new_student)
-
-    return jsonify({
-        "message": "Student added successfully!",
-        "student": new_student
-    }), 201
+    return redirect('/')
 
 
 # -----------------------
-# ERROR HANDLERS
+# JSON API ROUTE (Optional)
 # -----------------------
-
-@app.errorhandler(404)
-def not_found(error):
-    """Custom 404 error response."""
-    return jsonify({"error": "Resource not found"}), 404
-
-
-@app.errorhandler(500)
-def internal_error(error):
-    """Custom 500 error response."""
-    return jsonify({"error": "Internal Server Error"}), 500
+@app.route('/api/students', methods=['GET'])
+def get_students():
+    return jsonify(students), 200
 
 
 # -----------------------
-# MAIN ENTRY POINT
+# MAIN
 # -----------------------
 if __name__ == '__main__':
     app.run(debug=True)
